@@ -130,77 +130,77 @@ static FAST_RAM_ZERO_INIT int throttleAngleCorrection;
 
 
 static const motorMixer_t mixerQuadX[] = {
-    { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
-    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
-    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
-    { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
+    { 1.0f, 0.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
+    { 1.0f, 0.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
+    { 1.0f, 0.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
+    { 1.0f, 0.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
 };
 #ifndef USE_QUAD_MIXER_ONLY
 static const motorMixer_t mixerTricopter[] = {
-    { 1.0f,  0.0f,  1.333333f,  0.0f },     // REAR
-    { 1.0f, -1.0f, -0.666667f,  0.0f },     // RIGHT
-    { 1.0f,  1.0f, -0.666667f,  0.0f },     // LEFT
+    { 1.0f, 0.0f,  0.0f,  1.333333f,  0.0f },     // REAR
+    { 1.0f, 0.0f, -1.0f, -0.666667f,  0.0f },     // RIGHT
+    { 1.0f, 0.0f,  1.0f, -0.666667f,  0.0f },     // LEFT
 };
 
 static const motorMixer_t mixerQuadP[] = {
-    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR
-    { 1.0f, -1.0f,  0.0f,  1.0f },          // RIGHT
-    { 1.0f,  1.0f,  0.0f,  1.0f },          // LEFT
-    { 1.0f,  0.0f, -1.0f, -1.0f },          // FRONT
+    { 1.0f, 0.0f,  0.0f,  1.0f, -1.0f },          // REAR
+    { 1.0f, 0.0f, -1.0f,  0.0f,  1.0f },          // RIGHT
+    { 1.0f, 0.0f,  1.0f,  0.0f,  1.0f },          // LEFT
+    { 1.0f, 0.0f,  0.0f, -1.0f, -1.0f },          // FRONT
 };
 
 #if defined(USE_UNCOMMON_MIXERS)
 static const motorMixer_t mixerBicopter[] = {
-    { 1.0f,  1.0f,  0.0f,  0.0f },          // LEFT
-    { 1.0f, -1.0f,  0.0f,  0.0f },          // RIGHT
+    { 1.0f, 0.0f,  1.0f,  0.0f,  0.0f },          // LEFT
+    { 1.0f, 0.0f, -1.0f,  0.0f,  0.0f },          // RIGHT
 };
 #else
 #define mixerBicopter NULL
 #endif
 
 static const motorMixer_t mixerY4[] = {
-    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR_TOP CW
-    { 1.0f, -1.0f, -1.0f,  0.0f },          // FRONT_R CCW
-    { 1.0f,  0.0f,  1.0f,  1.0f },          // REAR_BOTTOM CCW
-    { 1.0f,  1.0f, -1.0f,  0.0f },          // FRONT_L CW
+    { 1.0f, 0.0f,  0.0f,  1.0f, -1.0f },          // REAR_TOP CW
+    { 1.0f, 0.0f, -1.0f, -1.0f,  0.0f },          // FRONT_R CCW
+    { 1.0f, 0.0f,  0.0f,  1.0f,  1.0f },          // REAR_BOTTOM CCW
+    { 1.0f, 0.0f,  1.0f, -1.0f,  0.0f },          // FRONT_L CW
 };
 
 
 #if (MAX_SUPPORTED_MOTORS >= 6)
 static const motorMixer_t mixerHex6X[] = {
-    { 1.0f, -0.5f,  0.866025f,  1.0f },     // REAR_R
-    { 1.0f, -0.5f, -0.866025f,  1.0f },     // FRONT_R
-    { 1.0f,  0.5f,  0.866025f, -1.0f },     // REAR_L
-    { 1.0f,  0.5f, -0.866025f, -1.0f },     // FRONT_L
-    { 1.0f, -1.0f,  0.0f,      -1.0f },     // RIGHT
-    { 1.0f,  1.0f,  0.0f,       1.0f },     // LEFT
+    { 1.0f, 0.0f, -0.5f,  0.866025f,  1.0f },     // REAR_R
+    { 1.0f, 0.0f, -0.5f, -0.866025f,  1.0f },     // FRONT_R
+    { 1.0f, 0.0f,  0.5f,  0.866025f, -1.0f },     // REAR_L
+    { 1.0f, 0.0f,  0.5f, -0.866025f, -1.0f },     // FRONT_L
+    { 1.0f, 0.0f, -1.0f,  0.0f,      -1.0f },     // RIGHT
+    { 1.0f, 0.0f,  1.0f,  0.0f,       1.0f },     // LEFT
 };
 
 #if defined(USE_UNCOMMON_MIXERS)
 static const motorMixer_t mixerHex6H[] = {
-    { 1.0f, -1.0f,  1.0f, -1.0f },     // REAR_R
-    { 1.0f, -1.0f, -1.0f,  1.0f },     // FRONT_R
-    { 1.0f,  1.0f,  1.0f,  1.0f },     // REAR_L
-    { 1.0f,  1.0f, -1.0f, -1.0f },     // FRONT_L
-    { 1.0f,  0.0f,  0.0f,  0.0f },     // RIGHT
-    { 1.0f,  0.0f,  0.0f,  0.0f },     // LEFT
+    { 1.0f, 0.0f, -1.0f,  1.0f, -1.0f },     // REAR_R
+    { 1.0f, 0.0f, -1.0f, -1.0f,  1.0f },     // FRONT_R
+    { 1.0f, 0.0f,  1.0f,  1.0f,  1.0f },     // REAR_L
+    { 1.0f, 0.0f,  1.0f, -1.0f, -1.0f },     // FRONT_L
+    { 1.0f, 0.0f,  0.0f,  0.0f,  0.0f },     // RIGHT
+    { 1.0f, 0.0f,  0.0f,  0.0f,  0.0f },     // LEFT
 };
 
 static const motorMixer_t mixerHex6P[] = {
-    { 1.0f, -0.866025f,  0.5f,  1.0f },     // REAR_R
-    { 1.0f, -0.866025f, -0.5f, -1.0f },     // FRONT_R
-    { 1.0f,  0.866025f,  0.5f,  1.0f },     // REAR_L
-    { 1.0f,  0.866025f, -0.5f, -1.0f },     // FRONT_L
-    { 1.0f,  0.0f,      -1.0f,  1.0f },     // FRONT
-    { 1.0f,  0.0f,       1.0f, -1.0f },     // REAR
+    { 1.0f, 0.0f, -0.866025f,  0.5f,  1.0f },     // REAR_R
+    { 1.0f, 0.0f, -0.866025f, -0.5f, -1.0f },     // FRONT_R
+    { 1.0f, 0.0f,  0.866025f,  0.5f,  1.0f },     // REAR_L
+    { 1.0f, 0.0f,  0.866025f, -0.5f, -1.0f },     // FRONT_L
+    { 1.0f, 0.0f,  0.0f,      -1.0f,  1.0f },     // FRONT
+    { 1.0f, 0.0f,  0.0f,       1.0f, -1.0f },     // REAR
 };
 static const motorMixer_t mixerY6[] = {
-    { 1.0f,  0.0f,  1.333333f,  1.0f },     // REAR
-    { 1.0f, -1.0f, -0.666667f, -1.0f },     // RIGHT
-    { 1.0f,  1.0f, -0.666667f, -1.0f },     // LEFT
-    { 1.0f,  0.0f,  1.333333f, -1.0f },     // UNDER_REAR
-    { 1.0f, -1.0f, -0.666667f,  1.0f },     // UNDER_RIGHT
-    { 1.0f,  1.0f, -0.666667f,  1.0f },     // UNDER_LEFT
+    { 1.0f, 0.0f,  0.0f,  1.333333f,  1.0f },     // REAR
+    { 1.0f, 0.0f, -1.0f, -0.666667f, -1.0f },     // RIGHT
+    { 1.0f, 0.0f,  1.0f, -0.666667f, -1.0f },     // LEFT
+    { 1.0f, 0.0f,  0.0f,  1.333333f, -1.0f },     // UNDER_REAR
+    { 1.0f, 0.0f, -1.0f, -0.666667f,  1.0f },     // UNDER_RIGHT
+    { 1.0f, 0.0f,  1.0f, -0.666667f,  1.0f },     // UNDER_LEFT
 };
 #else
 #define mixerHex6H NULL
@@ -213,36 +213,36 @@ static const motorMixer_t mixerY6[] = {
 
 #if defined(USE_UNCOMMON_MIXERS) && (MAX_SUPPORTED_MOTORS >= 8)
 static const motorMixer_t mixerOctoX8[] = {
-    { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
-    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
-    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
-    { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
-    { 1.0f, -1.0f,  1.0f,  1.0f },          // UNDER_REAR_R
-    { 1.0f, -1.0f, -1.0f, -1.0f },          // UNDER_FRONT_R
-    { 1.0f,  1.0f,  1.0f, -1.0f },          // UNDER_REAR_L
-    { 1.0f,  1.0f, -1.0f,  1.0f },          // UNDER_FRONT_L
+    { 1.0f, 0.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
+    { 1.0f, 0.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
+    { 1.0f, 0.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
+    { 1.0f, 0.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
+    { 1.0f, 0.0f, -1.0f,  1.0f,  1.0f },          // UNDER_REAR_R
+    { 1.0f, 0.0f, -1.0f, -1.0f, -1.0f },          // UNDER_FRONT_R
+    { 1.0f, 0.0f,  1.0f,  1.0f, -1.0f },          // UNDER_REAR_L
+    { 1.0f, 0.0f,  1.0f, -1.0f,  1.0f },          // UNDER_FRONT_L
 };
 
 static const motorMixer_t mixerOctoFlatP[] = {
-    { 1.0f,  0.707107f, -0.707107f,  1.0f },    // FRONT_L
-    { 1.0f, -0.707107f, -0.707107f,  1.0f },    // FRONT_R
-    { 1.0f, -0.707107f,  0.707107f,  1.0f },    // REAR_R
-    { 1.0f,  0.707107f,  0.707107f,  1.0f },    // REAR_L
-    { 1.0f,  0.0f, -1.0f, -1.0f },              // FRONT
-    { 1.0f, -1.0f,  0.0f, -1.0f },              // RIGHT
-    { 1.0f,  0.0f,  1.0f, -1.0f },              // REAR
-    { 1.0f,  1.0f,  0.0f, -1.0f },              // LEFT
+    { 1.0f, 0.0f,  0.707107f, -0.707107f,  1.0f },    // FRONT_L
+    { 1.0f, 0.0f, -0.707107f, -0.707107f,  1.0f },    // FRONT_R
+    { 1.0f, 0.0f, -0.707107f,  0.707107f,  1.0f },    // REAR_R
+    { 1.0f, 0.0f,  0.707107f,  0.707107f,  1.0f },    // REAR_L
+    { 1.0f, 0.0f,  0.0f, -1.0f, -1.0f },              // FRONT
+    { 1.0f, 0.0f, -1.0f,  0.0f, -1.0f },              // RIGHT
+    { 1.0f, 0.0f,  0.0f,  1.0f, -1.0f },              // REAR
+    { 1.0f, 0.0f,  1.0f,  0.0f, -1.0f },              // LEFT
 };
 
 static const motorMixer_t mixerOctoFlatX[] = {
-    { 1.0f,  1.0f, -0.414178f,  1.0f },      // MIDFRONT_L
-    { 1.0f, -0.414178f, -1.0f,  1.0f },      // FRONT_R
-    { 1.0f, -1.0f,  0.414178f,  1.0f },      // MIDREAR_R
-    { 1.0f,  0.414178f,  1.0f,  1.0f },      // REAR_L
-    { 1.0f,  0.414178f, -1.0f, -1.0f },      // FRONT_L
-    { 1.0f, -1.0f, -0.414178f, -1.0f },      // MIDFRONT_R
-    { 1.0f, -0.414178f,  1.0f, -1.0f },      // REAR_R
-    { 1.0f,  1.0f,  0.414178f, -1.0f },      // MIDREAR_L
+    { 1.0f, 0.0f,  1.0f, -0.414178f,  1.0f },      // MIDFRONT_L
+    { 1.0f, 0.0f, -0.414178f, -1.0f,  1.0f },      // FRONT_R
+    { 1.0f, 0.0f, -1.0f,  0.414178f,  1.0f },      // MIDREAR_R
+    { 1.0f, 0.0f,  0.414178f,  1.0f,  1.0f },      // REAR_L
+    { 1.0f, 0.0f,  0.414178f, -1.0f, -1.0f },      // FRONT_L
+    { 1.0f, 0.0f, -1.0f, -0.414178f, -1.0f },      // MIDFRONT_R
+    { 1.0f, 0.0f, -0.414178f,  1.0f, -1.0f },      // REAR_R
+    { 1.0f, 0.0f,  1.0f,  0.414178f, -1.0f },      // MIDREAR_L
 };
 #else
 #define mixerOctoX8 NULL
@@ -251,37 +251,45 @@ static const motorMixer_t mixerOctoFlatX[] = {
 #endif
 
 static const motorMixer_t mixerVtail4[] = {
-    { 1.0f,  -0.58f,  0.58f, 1.0f },        // REAR_R
-    { 1.0f,  -0.46f, -0.39f, -0.5f },       // FRONT_R
-    { 1.0f,  0.58f,  0.58f, -1.0f },        // REAR_L
-    { 1.0f,  0.46f, -0.39f, 0.5f },         // FRONT_L
+    { 1.0f, 0.0f,  -0.58f,  0.58f, 1.0f },        // REAR_R
+    { 1.0f, 0.0f,  -0.46f, -0.39f, -0.5f },       // FRONT_R
+    { 1.0f, 0.0f,  0.58f,  0.58f, -1.0f },        // REAR_L
+    { 1.0f, 0.0f,  0.46f, -0.39f, 0.5f },         // FRONT_L
 };
 
 static const motorMixer_t mixerAtail4[] = {
-    { 1.0f, -0.58f,  0.58f, -1.0f },          // REAR_R
-    { 1.0f, -0.46f, -0.39f,  0.5f },          // FRONT_R
-    { 1.0f,  0.58f,  0.58f,  1.0f },          // REAR_L
-    { 1.0f,  0.46f, -0.39f, -0.5f },          // FRONT_L
+    { 1.0f, 0.0f, -0.58f,  0.58f, -1.0f },          // REAR_R
+    { 1.0f, 0.0f, -0.46f, -0.39f,  0.5f },          // FRONT_R
+    { 1.0f, 0.0f,  0.58f,  0.58f,  1.0f },          // REAR_L
+    { 1.0f, 0.0f,  0.46f, -0.39f, -0.5f },          // FRONT_L
 };
 
 #if defined(USE_UNCOMMON_MIXERS)
 static const motorMixer_t mixerDualcopter[] = {
-    { 1.0f,  0.0f,  0.0f, -1.0f },          // LEFT
-    { 1.0f,  0.0f,  0.0f,  1.0f },          // RIGHT
+    { 1.0f, 0.0f,  0.0f,  0.0f, -1.0f },          // LEFT
+    { 1.0f, 0.0f,  0.0f,  0.0f,  1.0f },          // RIGHT
 };
 #else
 #define mixerDualcopter NULL
 #endif
 
 static const motorMixer_t mixerSingleProp[] = {
-    { 1.0f,  0.0f,  0.0f, 0.0f },
+    { 1.0f, 0.0f,  0.0f,  0.0f, 0.0f },
 };
 
 static const motorMixer_t mixerQuadX1234[] = {
-    { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
-    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
-    { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
-    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
+    { 1.0f, 0.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
+    { 1.0f, 0.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
+    { 1.0f, 0.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
+    { 1.0f, 0.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
+};
+
+static const motorMixer_t mixerPenta[] = {
+    { 1.0f, 0.0f,  1.0f,  0.0f,  0.0f },          // FRONT_L
+    { 0.0f, 1.0f,  0.0f,  0.0f,  1.0f },          // FRONT_R
+    { 1.0f, 0.0f,  1.0f, -1.0f,  0.0f },          // REAR_R
+    { 1.0f, 0.0f,  0.0f,  0.0f, -1.0f },          // REAR_L
+    { 0.0f, 1.0f,  0.0f,  0.0f, -1.0f },
 };
 
 // Keep synced with mixerMode_e
@@ -314,6 +322,7 @@ const mixer_t mixers[] = {
     { 2, true,  NULL },                // MIXER_CUSTOM_AIRPLANE
     { 3, true,  NULL },                // MIXER_CUSTOM_TRI
     { 4, false, mixerQuadX1234 },
+    { 5, false, mixerPenta },
 };
 #endif // !USE_QUAD_MIXER_ONLY
 
@@ -438,7 +447,7 @@ void mixerConfigureOutput(void)
         // load custom mixer into currentMixer
         for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             // check if done
-            if (customMotorMixer(i)->throttle == 0.0f) {
+            if (customMotorMixer(i)->throttle == 0.0f && customMotorMixer(i)->boost == 0.0f) {
                 break;
             }
             currentMixer[i] = *customMotorMixer(i);
@@ -524,6 +533,7 @@ void stopPwmAllMotors(void)
 }
 
 static FAST_RAM_ZERO_INIT float throttle = 0;
+static FAST_RAM_ZERO_INIT float boost = 0;
 static FAST_RAM_ZERO_INIT float motorOutputMin;
 static FAST_RAM_ZERO_INIT float motorRangeMin;
 static FAST_RAM_ZERO_INIT float motorRangeMax;
@@ -609,6 +619,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             pidResetITerm();
         }
     } else {
+        boost = rcData[AUX4] - rxConfig()->mincheck;
         throttle = rcCommand[THROTTLE] - rxConfig()->mincheck + throttleAngleCorrection;
         currentThrottleInputRange = rcCommandThrottleRange;
         motorRangeMin = motorOutputLow;
@@ -617,7 +628,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         motorOutputRange = motorOutputHigh - motorOutputLow;
         motorOutputMixSign = 1;
     }
-
+    boost = constrainf(boost / currentThrottleInputRange, 0.0f, 1.0f);
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
 }
 
@@ -695,7 +706,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (int i = 0; i < motorCount; i++) {
-        float motorOutput = motorOutputMin + (motorOutputRange * (motorOutputMixSign * motorMix[i] + throttle * currentMixer[i].throttle));
+        float motorOutput = motorOutputMin + (motorOutputRange * (motorOutputMixSign * motorMix[i] + throttle * currentMixer[i].throttle + boost * currentMixer[i].boost));
         if (mixerIsTricopter()) {
             motorOutput += mixerTricopterMotorCorrection(i);
         }

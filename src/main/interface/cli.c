@@ -1338,39 +1338,44 @@ static void cliAdjustmentRange(char *cmdline)
 #ifndef USE_QUAD_MIXER_ONLY
 static void printMotorMix(uint8_t dumpMask, const motorMixer_t *customMotorMixer, const motorMixer_t *defaultCustomMotorMixer)
 {
-    const char *format = "mmix %d %s %s %s %s";
+    const char *format = "mmix %d %s %s %s %s %s";
     char buf0[FTOA_BUFFER_LENGTH];
     char buf1[FTOA_BUFFER_LENGTH];
     char buf2[FTOA_BUFFER_LENGTH];
     char buf3[FTOA_BUFFER_LENGTH];
+    char buf4[FTOA_BUFFER_LENGTH];
     for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        if (customMotorMixer[i].throttle == 0.0f)
+        if (customMotorMixer[i].throttle == 0.0f && customMotorMixer[i].boost == 0.0f)
             break;
         const float thr = customMotorMixer[i].throttle;
+        const float boost = customMotorMixer[i].boost;
         const float roll = customMotorMixer[i].roll;
         const float pitch = customMotorMixer[i].pitch;
         const float yaw = customMotorMixer[i].yaw;
         bool equalsDefault = false;
         if (defaultCustomMotorMixer) {
             const float thrDefault = defaultCustomMotorMixer[i].throttle;
+            const float boostDefault = defaultCustomMotorMixer[i].boost;
             const float rollDefault = defaultCustomMotorMixer[i].roll;
             const float pitchDefault = defaultCustomMotorMixer[i].pitch;
             const float yawDefault = defaultCustomMotorMixer[i].yaw;
-            const bool equalsDefault = thr == thrDefault && roll == rollDefault && pitch == pitchDefault && yaw == yawDefault;
+            const bool equalsDefault = thr == thrDefault && boost == boostDefault && roll == rollDefault && pitch == pitchDefault && yaw == yawDefault;
 
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
                 ftoa(thrDefault, buf0),
                 ftoa(rollDefault, buf1),
                 ftoa(pitchDefault, buf2),
+                ftoa(yawDefault, buf3),
                 ftoa(yawDefault, buf3));
         }
         cliDumpPrintLinef(dumpMask, equalsDefault, format,
             i,
             ftoa(thr, buf0),
-            ftoa(roll, buf1),
-            ftoa(pitch, buf2),
-            ftoa(yaw, buf3));
+            ftoa(boost, buf1),
+            ftoa(roll, buf2),
+            ftoa(pitch, buf3),
+            ftoa(yaw, buf4));
     }
 }
 #endif // USE_QUAD_MIXER_ONLY
@@ -1390,6 +1395,7 @@ static void cliMotorMix(char *cmdline)
         // erase custom mixer
         for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             customMotorMixerMutable(i)->throttle = 0.0f;
+            customMotorMixerMutable(i)->boost = 0.0f;
         }
     } else if (strncasecmp(cmdline, "load", 4) == 0) {
         ptr = nextArg(cmdline);
@@ -1419,6 +1425,11 @@ static void cliMotorMix(char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
+                customMotorMixerMutable(i)->boost = fastA2F(ptr);
+                check++;
+            }
+            ptr = nextArg(ptr);
+            if (ptr) {
                 customMotorMixerMutable(i)->roll = fastA2F(ptr);
                 check++;
             }
@@ -1432,7 +1443,7 @@ static void cliMotorMix(char *cmdline)
                 customMotorMixerMutable(i)->yaw = fastA2F(ptr);
                 check++;
             }
-            if (check != 4) {
+            if (check != 5) {
                 cliShowParseError();
             } else {
                 printMotorMix(DUMP_MASTER, customMotorMixer(0), NULL);

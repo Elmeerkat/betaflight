@@ -30,6 +30,7 @@ typedef enum rc_alias {
     PITCH,
     YAW,
     THROTTLE,
+    //AUX1,
     AUX1,
     AUX2,
     AUX3,
@@ -108,7 +109,7 @@ typedef enum {
 
 #define CONTROL_RATE_CONFIG_TPA_MAX              100
 
-extern float rcCommand[4];
+extern float rcCommand[5];
 
 typedef struct rcSmoothingFilterTraining_s {
     float sum;
