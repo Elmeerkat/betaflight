@@ -33,23 +33,19 @@
  * Number of channels: 16
  *
  * Connect as follows:
- * Jeti EX Bus -> Serial RX (connect directly)
- * Serial TX -> Resistor(2k4) ->Serial RX
- * In jeti pdf it is different, but if the resistor breaks, the receiver continues to operate.
- *
+ * Jeti EX Bus -> Serial TX (connect directly)
  */
+
 
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "platform.h"
 
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX_JETIEXBUS
 
 #include "build/build_config.h"
 #include "build/debug.h"
-
-#include "pg/rx.h"
 
 #include "common/utils.h"
 
@@ -229,9 +225,9 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
 }
 
 // Check if it is time to read a frame from the data...
-static uint8_t jetiExBusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
+static uint8_t jetiExBusFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
-    UNUSED(rxRuntimeConfig);
+    UNUSED(rxRuntimeState);
 
     if (jetiExBusFrameState != EXBUS_STATE_RECEIVED)
         return RX_FRAME_PENDING;
@@ -246,23 +242,23 @@ static uint8_t jetiExBusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     }
 }
 
-static uint16_t jetiExBusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t jetiExBusReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
 {
-    if (chan >= rxRuntimeConfig->channelCount)
+    if (chan >= rxRuntimeState->channelCount)
         return 0;
 
     return (jetiExBusChannelData[chan]);
 }
 
-bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxConfig);
 
-    rxRuntimeConfig->channelCount = JETIEXBUS_CHANNEL_COUNT;
-    rxRuntimeConfig->rxRefreshRate = 5500;
+    rxRuntimeState->channelCount = JETIEXBUS_CHANNEL_COUNT;
+    rxRuntimeState->rxRefreshRate = 5500;
 
-    rxRuntimeConfig->rcReadRawFn = jetiExBusReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFn = jetiExBusFrameStatus;
+    rxRuntimeState->rcReadRawFn = jetiExBusReadRawRC;
+    rxRuntimeState->rcFrameStatusFn = jetiExBusFrameStatus;
 
     jetiExBusFrameReset();
 
@@ -278,9 +274,8 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfi
         NULL,
         JETIEXBUS_BAUDRATE,
         MODE_RXTX,
-        JETIEXBUS_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
+        JETIEXBUS_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | SERIAL_BIDIR
         );
-    serialSetMode(jetiExBusPort, MODE_RX);
     return jetiExBusPort != NULL;
 }
 #endif // SERIAL_RX

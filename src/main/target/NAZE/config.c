@@ -35,7 +35,6 @@
 #include "fc/controlrate_profile.h"
 
 #include "flight/failsafe.h"
-#include "flight/mixer.h"
 #include "flight/pid.h"
 
 #include "pg/rx.h"
@@ -48,6 +47,7 @@
 
 #include "pg/beeper_dev.h"
 #include "pg/flash.h"
+#include "pg/motor.h"
 
 #include "hardware_revision.h"
 
@@ -61,6 +61,8 @@ void targetConfiguration(void)
 
     motorConfigMutable()->minthrottle = 1049;
 
+    gyroDeviceConfigMutable()->extiTag = selectMPUIntExtiConfigByHardwareRevision();
+
     gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_1KHZ_SAMPLE;
     gyroConfigMutable()->gyro_soft_lpf_hz = 100;
     gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
@@ -71,7 +73,7 @@ void targetConfiguration(void)
         rxChannelRangeConfigsMutable(channel)->max = 1860;
     }*/
 
-    for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+    for (uint8_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
         pidProfile->pid[PID_ROLL].P = 60;

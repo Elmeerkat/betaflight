@@ -24,13 +24,14 @@
 
 #include "platform.h"
 
+#ifdef USE_UART
+
 #include "build/build_config.h"
 
 #include "io/serial.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 
-#include "pg/pg.h"
 #include "pg/pg_ids.h"
 
 // Backward compatibility for exisiting targets
@@ -272,4 +273,5 @@ void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
         serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->inverterIO;
     }
 }
+#endif
 #endif

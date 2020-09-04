@@ -29,7 +29,7 @@
 
 #include "platform.h"
 
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_MAVLINK)
+#if defined(USE_TELEMETRY_MAVLINK)
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -183,7 +183,7 @@ void configureMAVLinkTelemetryPort(void)
 
 void checkMAVLinkTelemetryState(void)
 {
-    if (portConfig && telemetryCheckRxPortShared(portConfig)) {
+    if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
         if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
             mavlinkPort = telemetrySharedPort;
             mavlinkTelemetryEnabled = true;
@@ -227,7 +227,7 @@ void mavlinkSendSystemStatus(void)
     int8_t batteryRemaining = 100;
 
     if (getBatteryState() < BATTERY_NOT_PRESENT) {
-        batteryVoltage = isBatteryVoltageConfigured() ? getBatteryVoltage() * 100 : batteryVoltage;
+        batteryVoltage = isBatteryVoltageConfigured() ? getBatteryVoltage() * 10 : batteryVoltage;
         batteryAmperage = isAmperageConfigured() ? getAmperage() : batteryAmperage;
         batteryRemaining = isBatteryVoltageConfigured() ? calculateBatteryPercentageRemaining() : batteryRemaining;
     }
@@ -276,21 +276,21 @@ void mavlinkSendRCChannelsAndRSSI(void)
         // port Servo output port (set of 8 outputs = 1 port). Most MAVs will just use one, but this allows to encode more than 8 servos.
         0,
         // chan1_raw RC channel 1 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 1) ? rcData[0] : 0,
+        (rxRuntimeState.channelCount >= 1) ? rcData[0] : 0,
         // chan2_raw RC channel 2 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 2) ? rcData[1] : 0,
+        (rxRuntimeState.channelCount >= 2) ? rcData[1] : 0,
         // chan3_raw RC channel 3 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 3) ? rcData[2] : 0,
+        (rxRuntimeState.channelCount >= 3) ? rcData[2] : 0,
         // chan4_raw RC channel 4 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 4) ? rcData[3] : 0,
+        (rxRuntimeState.channelCount >= 4) ? rcData[3] : 0,
         // chan5_raw RC channel 5 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 5) ? rcData[4] : 0,
+        (rxRuntimeState.channelCount >= 5) ? rcData[4] : 0,
         // chan6_raw RC channel 6 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 6) ? rcData[5] : 0,
+        (rxRuntimeState.channelCount >= 6) ? rcData[5] : 0,
         // chan7_raw RC channel 7 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 7) ? rcData[6] : 0,
+        (rxRuntimeState.channelCount >= 7) ? rcData[6] : 0,
         // chan8_raw RC channel 8 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 8) ? rcData[7] : 0,
+        (rxRuntimeState.channelCount >= 8) ? rcData[7] : 0,
         // rssi Receive signal strength indicator, 0: 0%, 255: 100%
         constrain(scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 255), 0, 255));
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
@@ -501,15 +501,6 @@ void mavlinkSendHUDAndHeartbeat(void)
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
         mavCustomMode = 0;      //Stabilize
         mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
-    }
-    if (FLIGHT_MODE(BARO_MODE)) {
-        mavCustomMode = 2;      //Alt Hold
-    }
-    if (FLIGHT_MODE(GPS_HOME_MODE)) {
-        mavCustomMode = 6;      //Return to Launch
-    }
-    if (FLIGHT_MODE(GPS_HOLD_MODE)) {
-        mavCustomMode = 16;     //Position Hold (Earlier called Hybrid)
     }
 
     uint8_t mavSystemState = 0;

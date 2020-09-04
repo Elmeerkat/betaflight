@@ -71,7 +71,7 @@ extern "C" {
     uint32_t targetPidLooptime;
     bool cmsInMenu = false;
     float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
-    rxRuntimeConfig_t rxRuntimeConfig = {};
+    rxRuntimeState_t rxRuntimeState = {};
 }
 
 uint32_t simulationFeatureFlags = 0;
@@ -88,6 +88,8 @@ TEST(VtxTest, PitMode)
     modeActivationConditionsMutable(0)->modeId = BOXVTXPITMODE;
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+
+    analyzeModeActivationConditions();
 
     // and
     vtxSettingsConfigMutable()->band = 0;
@@ -131,7 +133,7 @@ extern "C" {
     bool isGyroCalibrationComplete(void) { return gyroCalibDone; }
     void gyroStartCalibration(bool) {}
     bool isFirstArmingGyroCalibrationRunning(void) { return false; }
-    void pidController(const pidProfile_t *, const rollAndPitchTrims_t *, timeUs_t) {}
+    void pidController(const pidProfile_t *, timeUs_t) {}
     void pidStabilisationState(pidStabilisationState_e) {}
     void mixTable(timeUs_t , uint8_t) {};
     void writeMotors(void) {};
@@ -145,7 +147,7 @@ extern "C" {
     void failsafeStartMonitoring(void) {}
     void failsafeUpdateState(void) {}
     bool failsafeIsActive(void) { return false; }
-    void pidResetITerm(void) {}
+    void pidResetIterm(void) {}
     void updateAdjustmentStates(void) {}
     void processRcAdjustments(controlRateConfig_t *) {}
     void updateGpsWaypointsAndMode(void) {}
@@ -173,4 +175,7 @@ extern "C" {
     bool usbCableIsInserted(void) { return false; }
     bool usbVcpIsConnected(void) { return false; }
     void pidSetAntiGravityState(bool newState) { UNUSED(newState); }
+    void osdSuppressStats(bool) {}
+    void pidSetItermReset(bool) {}
+    void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
 }

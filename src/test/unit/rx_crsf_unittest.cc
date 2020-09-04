@@ -41,10 +41,12 @@ extern "C" {
 
     #include "telemetry/msp_shared.h"
 
+    rssiSource_e rssiSource;
+
     void crsfDataReceive(uint16_t c);
     uint8_t crsfFrameCRC(void);
     uint8_t crsfFrameStatus(void);
-    uint16_t crsfReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+    uint16_t crsfReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan);
 
     extern bool crsfFrameDone;
     extern crsfFrame_t crsfFrame;

@@ -20,12 +20,15 @@
 extern "C" {
     #include "platform.h"
 
+    #include "build/debug.h"
+
     #include "blackbox/blackbox.h"
     #include "common/utils.h"
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
     #include "pg/rx.h"
+    #include "pg/motor.h"
 
     #include "drivers/accgyro/accgyro.h"
     #include "drivers/accgyro/gyro_sync.h"
@@ -73,7 +76,7 @@ TEST(BlackboxTest, TestInitIntervals)
     EXPECT_EQ(4096, blackboxSInterval);
 
     // 1kHz PIDloop
-    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_HARDWARE_LPF_1KHZ_SAMPLE, 1, false);
+    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_HARDWARE_LPF_1KHZ_SAMPLE, 1);
     targetPidLooptime = gyro.targetLooptime * 1;
     blackboxInit();
     EXPECT_EQ(32, blackboxIInterval);
@@ -361,7 +364,8 @@ uint8_t armingFlags;
 uint8_t stateFlags;
 const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
         400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
-uint8_t debugMode;
+uint8_t debugMode = 0;
+int16_t debug[DEBUG16_VALUE_COUNT];
 int32_t blackboxHeaderBudget;
 gpsSolutionData_t gpsSol;
 int32_t GPS_home[2];
@@ -398,5 +402,6 @@ portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunctio
 failsafePhase_e failsafePhase(void) {return FAILSAFE_IDLE;}
 bool rxAreFlightChannelsValid(void) {return false;}
 bool rxIsReceivingSignal(void) {return false;}
+bool isRssiConfigured(void) {return false;}
 
 }

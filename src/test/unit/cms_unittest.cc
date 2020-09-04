@@ -30,6 +30,7 @@ extern "C" {
     #include "target.h"
     #include "cms/cms.h"
     #include "cms/cms_types.h"
+    #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
     void cmsMenuOpen(void);
     long cmsMenuBack(displayPort_t *pDisplay);
@@ -126,12 +127,13 @@ static OSD_Entry menuMainEntries[] =
 };
 CMS_Menu menuMain = {
 #ifdef CMS_MENU_DEBUG
-    "MENUMAIN",
-    OME_MENU,
+    .GUARD_text = "MENUMAIN",
+    .GUARD_type = OME_MENU,
 #endif
-    NULL,
-    NULL,
-    menuMainEntries,
+    .onEnter = NULL,
+    .onExit = NULL,
+    .checkRedirect = NULL,
+    .entries = menuMainEntries,
 };
 uint8_t armingFlags;
 int16_t debug[4];
@@ -141,8 +143,11 @@ uint32_t micros(void) { return 0; }
 uint32_t millis(void) { return 0; }
 void saveConfigAndNotify(void) {}
 void stopMotors(void) {}
-void stopPwmAllMotors(void) {}
+void motorShutdown(void) {}
 void systemReset(void) {}
 void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
 void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
+bool IS_RC_MODE_ACTIVE(boxId_e) { return false; }
+void setRebootRequired(void) {}
+bool getRebootRequired(void) { return false; }
 }

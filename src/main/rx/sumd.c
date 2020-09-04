@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX_SUMD
 
 #include "common/crc.h"
 #include "common/utils.h"
@@ -108,11 +108,9 @@ static void sumdDataReceive(uint16_t c, void *data)
 #define SUMDV3_FRAME_STATE_OK 0x03
 #define SUMD_FRAME_STATE_FAILSAFE 0x81
 
-static uint8_t sumdFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
+static uint8_t sumdFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
-    UNUSED(rxRuntimeConfig);
-
-    uint8_t channelIndex;
+    UNUSED(rxRuntimeState);
 
     uint8_t frameStatus = RX_FRAME_PENDING;
 
@@ -139,10 +137,9 @@ static uint8_t sumdFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
             return frameStatus;
     }
 
-    if (sumdChannelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT)
-        sumdChannelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
+    unsigned channelsToProcess = MIN(sumdChannelCount, MAX_SUPPORTED_RC_CHANNEL_COUNT);
 
-    for (channelIndex = 0; channelIndex < sumdChannelCount; channelIndex++) {
+    for (unsigned channelIndex = 0; channelIndex < channelsToProcess; channelIndex++) {
         sumdChannels[channelIndex] = (
             (sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_HIGH] << 8) |
             sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_LOW]
@@ -151,21 +148,21 @@ static uint8_t sumdFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     return frameStatus;
 }
 
-static uint16_t sumdReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t sumdReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
 {
-    UNUSED(rxRuntimeConfig);
+    UNUSED(rxRuntimeState);
     return sumdChannels[chan] / 8;
 }
 
-bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxConfig);
 
-    rxRuntimeConfig->channelCount = MIN(SUMD_MAX_CHANNEL, MAX_SUPPORTED_RC_CHANNEL_COUNT);
-    rxRuntimeConfig->rxRefreshRate = 11000;
+    rxRuntimeState->channelCount = MIN(SUMD_MAX_CHANNEL, MAX_SUPPORTED_RC_CHANNEL_COUNT);
+    rxRuntimeState->rxRefreshRate = 11000;
 
-    rxRuntimeConfig->rcReadRawFn = sumdReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFn = sumdFrameStatus;
+    rxRuntimeState->rcReadRawFn = sumdReadRawRC;
+    rxRuntimeState->rcFrameStatusFn = sumdFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
@@ -173,7 +170,7 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     }
 
 #ifdef USE_TELEMETRY
-    bool portShared = telemetryCheckRxPortShared(portConfig);
+    bool portShared = telemetryCheckRxPortShared(portConfig, rxRuntimeState->serialrxProvider);
 #else
     bool portShared = false;
 #endif

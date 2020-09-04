@@ -77,23 +77,12 @@ static char *gpsPacketLogChar = gpsPacketLog;
 int32_t GPS_home[2];
 uint16_t GPS_distanceToHome;        // distance to home point in meters
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
+int16_t GPS_verticalSpeedInCmS;     // vertical speed in cm/s
 float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
-int16_t actual_speed[2] = { 0, 0 };
 int16_t nav_takeoff_bearing;
-navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
 
-// moving average filter variables
-#define GPS_FILTERING              1    // add a 5 element moving average filter to GPS coordinates, helps eliminate gps noise but adds latency
-#ifdef GPS_FILTERING
-#define GPS_FILTER_VECTOR_LENGTH 5
-static uint8_t GPS_filter_index = 0;
-static int32_t GPS_filter[2][GPS_FILTER_VECTOR_LENGTH];
-static int32_t GPS_filter_sum[2];
-static int32_t GPS_read[2];
-static int32_t GPS_filtered[2];
-static int32_t GPS_degree[2];   //the lat lon degree without any decimals (lat/10 000 000)
-static uint16_t fraction3[2];
-#endif
+#define GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S 15 // 5.4Km/h 3.35mph
 
 gpsSolutionData_t gpsSol;
 uint32_t GPS_packetCount = 0;
@@ -138,26 +127,10 @@ static const gpsInitData_t gpsInitData[] = {
 #ifdef USE_GPS_UBLOX
 static const uint8_t ubloxInit[] = {
     //Preprocessor Pedestrian Dynamic Platform Model Option
-    #if defined(GPS_UBLOX_MODE_PEDESTRIAN)
     0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x03, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
     0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Pedistrian and
     0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // capturing the data from the U-Center binary console.
     0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17, 0xC2,
-
-    //Preprocessor Airborne_1g Dynamic Platform Model Option
-    #elif defined(GPS_UBLOX_MODE_AIRBORNE_1G)
-    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x06, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
-    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Airborne with
-    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // <1g acceleration and capturing the data from the U-Center binary console.
-    0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1A, 0x28,
-
-    //Default Airborne_4g Dynamic Platform Model
-    #else
-    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x08, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
-    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Airborne with
-    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // <4g acceleration and capturing the data from the U-Center binary console.
-    0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x6C,
-    #endif
 
     // DISABLE NMEA messages
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x05, 0x00, 0xFF, 0x19,           // VGS: Course over ground and Ground speed
@@ -176,6 +149,23 @@ static const uint8_t ubloxInit[] = {
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x12, 0x01, 0x1E, 0x67,           // set VELNED MSG rate
 
     0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xC8, 0x00, 0x01, 0x00, 0x01, 0x00, 0xDE, 0x6A,             // set rate to 5Hz (measurement period: 200ms, navigation rate: 1 cycle)
+};
+
+static const uint8_t ubloxAirborne[] = {
+    //Preprocessor Airborne_1g Dynamic Platform Model Option
+    #if defined(GPS_UBLOX_MODE_AIRBORNE_1G)
+    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x06, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
+    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Airborne with
+    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // <1g acceleration and capturing the data from the U-Center binary console.
+    0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1A, 0x28,
+
+    //Default Airborne_4g Dynamic Platform Model
+    #else
+    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x08, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
+    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Airborne with
+    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // <4g acceleration and capturing the data from the U-Center binary console.
+    0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x6C,
+    #endif
 };
 
 // UBlox 6 Protocol documentation - GPS.G6-SW-10018-F
@@ -241,7 +231,9 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .sbasMode = SBAS_AUTO,
     .autoConfig = GPS_AUTOCONFIG_ON,
     .autoBaud = GPS_AUTOBAUD_OFF,
-    .gps_ublox_use_galileo = false
+    .gps_ublox_use_galileo = false,
+    .gps_set_home_point_once = false,
+    .gps_use_3d_speed = false
 );
 
 static void shiftPacketLog(void)
@@ -457,7 +449,7 @@ void gpsInitUblox(void)
                 }
             }
 
-            if (gpsData.messageState >= GPS_MESSAGE_STATE_ENTRY_COUNT) {
+            if (gpsData.messageState >= GPS_MESSAGE_STATE_INITIALIZED) {
                 // ublox should be initialised, try receiving
                 gpsSetState(GPS_RECEIVING_DATA);
             }
@@ -538,11 +530,29 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 // remove GPS from capability
                 sensorsClear(SENSOR_GPS);
                 gpsSetState(GPS_LOST_COMMUNICATION);
+#if !defined(GPS_UBLOX_MODE_PEDESTRIAN)
+            } else {
+                if ((gpsData.messageState == GPS_MESSAGE_STATE_IDLE) && STATE(GPS_FIX)) {
+                    gpsData.messageState = GPS_MESSAGE_STATE_AIRBORNE;
+                    gpsData.state_position = 0;
+                }
+                if (gpsData.messageState == GPS_MESSAGE_STATE_AIRBORNE) {
+                    if (gpsData.state_position < sizeof(ubloxAirborne)) {
+                        serialWrite(gpsPort, ubloxAirborne[gpsData.state_position]);
+                        gpsData.state_position++;
+                    } else {
+                        gpsData.messageState = GPS_MESSAGE_STATE_ENTRY_COUNT;
+                    }
+                }
+#endif
             }
             break;
     }
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
+    }
+    if (!ARMING_FLAG(ARMED) && !gpsConfig()->gps_set_home_point_once) {
+        DISABLE_STATE(GPS_FIX_HOME);
     }
 #if defined(USE_GPS_RESCUE)
     if (gpsRescueIsConfigured()) {
@@ -590,6 +600,11 @@ bool gpsNewFrame(uint8_t c)
     return false;
 }
 
+// Check for healthy communications
+bool gpsIsHealthy()
+{
+    return (gpsData.state == GPS_RECEIVING_DATA);
+}
 
 /* This is a light implementation of a GPS frame decoding
    This should work with most of modern GPS devices configured to output 5 frames.
@@ -1106,7 +1121,7 @@ static bool UBLOX_parse_gps(void)
         break;
     case MSG_VELNED:
         *gpsPacketLogChar = LOG_UBLOX_VELNED;
-        // speed_3d                        = _buffer.velned.speed_3d;  // cm/s
+        gpsSol.speed3d = _buffer.velned.speed_3d;       // cm/s
         gpsSol.groundSpeed = _buffer.velned.speed_2d;    // cm/s
         gpsSol.groundCourse = (uint16_t) (_buffer.velned.heading_2d / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
         _new_speed = true;
@@ -1256,20 +1271,59 @@ float GPS_scaleLonDown = 1.0f;  // this is used to offset the shrinking longitud
 
 void GPS_calc_longitude_scaling(int32_t lat)
 {
-    float rads = (ABS((float)lat) / 10000000.0f) * 0.0174532925f;
+    float rads = (fabsf((float)lat) / 10000000.0f) * 0.0174532925f;
     GPS_scaleLonDown = cos_approx(rads);
 }
 
+////////////////////////////////////////////////////////////////////////////////////
+// Calculate the distance flown and vertical speed from gps position data
+//
+static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
+{
+    static int32_t lastCoord[2] = { 0, 0 };
+    static int32_t lastAlt;
+    static int32_t lastMillis;
+
+    int currentMillis = millis();
+
+    if (initialize) {
+        GPS_distanceFlownInCm = 0;
+        GPS_verticalSpeedInCmS = 0;
+    } else {
+        if (STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED)) {
+            uint16_t speed = gpsConfig()->gps_use_3d_speed ? gpsSol.speed3d : gpsSol.groundSpeed;
+            // Only add up movement when speed is faster than minimum threshold
+            if (speed > GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S) {
+                uint32_t dist;
+                int32_t dir;
+                GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
+                if (gpsConfig()->gps_use_3d_speed) {
+                    dist = sqrtf(powf(gpsSol.llh.altCm - lastAlt, 2.0f) + powf(dist, 2.0f));
+                }
+                GPS_distanceFlownInCm += dist;
+            }
+        }
+        GPS_verticalSpeedInCmS = (gpsSol.llh.altCm - lastAlt) * 1000 / (currentMillis - lastMillis);
+        GPS_verticalSpeedInCmS = constrain(GPS_verticalSpeedInCmS, -1500, 1500);
+    }
+    lastCoord[LON] = gpsSol.llh.lon;
+    lastCoord[LAT] = gpsSol.llh.lat;
+    lastAlt = gpsSol.llh.altCm;
+    lastMillis = currentMillis;
+}
 
 void GPS_reset_home_position(void)
 {
-    if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
-        GPS_home[LAT] = gpsSol.llh.lat;
-        GPS_home[LON] = gpsSol.llh.lon;
-        GPS_calc_longitude_scaling(gpsSol.llh.lat); // need an initial value for distance and bearing calc
-        // Set ground altitude
-        ENABLE_STATE(GPS_FIX_HOME);
+    if (!STATE(GPS_FIX_HOME) || !gpsConfig()->gps_set_home_point_once) {
+        if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
+            GPS_home[LAT] = gpsSol.llh.lat;
+            GPS_home[LON] = gpsSol.llh.lon;
+            GPS_calc_longitude_scaling(gpsSol.llh.lat); // need an initial value for distance and bearing calc
+            // Set ground altitude
+            ENABLE_STATE(GPS_FIX_HOME);
+        }
     }
+    GPS_calculateDistanceFlownVerticalSpeed(true); //Initialize
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -1302,70 +1356,11 @@ void GPS_calculateDistanceAndDirectionToHome(void)
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-// Calculate our current speed vector from gps position data
-//
-static void GPS_calc_velocity(void)
-{
-    static int16_t speed_old[2] = { 0, 0 };
-    static int32_t last_coord[2] = { 0, 0 };
-    static uint8_t init = 0;
-
-    if (init) {
-        float tmp = 1.0f / dTnav;
-        actual_speed[GPS_X] = (float)(gpsSol.llh.lon - last_coord[LON]) * GPS_scaleLonDown * tmp;
-        actual_speed[GPS_Y] = (float)(gpsSol.llh.lat - last_coord[LAT]) * tmp;
-
-        actual_speed[GPS_X] = (actual_speed[GPS_X] + speed_old[GPS_X]) / 2;
-        actual_speed[GPS_Y] = (actual_speed[GPS_Y] + speed_old[GPS_Y]) / 2;
-
-        speed_old[GPS_X] = actual_speed[GPS_X];
-        speed_old[GPS_Y] = actual_speed[GPS_Y];
-    }
-    init = 1;
-
-    last_coord[LON] = gpsSol.llh.lon;
-    last_coord[LAT] = gpsSol.llh.lat;
-}
-
 void onGpsNewData(void)
 {
     if (!(STATE(GPS_FIX) && gpsSol.numSat >= 5)) {
         return;
     }
-
-    if (!ARMING_FLAG(ARMED))
-        DISABLE_STATE(GPS_FIX_HOME);
-
-    if (!STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED))
-        GPS_reset_home_position();
-
-    // Apply moving average filter to GPS data
-#if defined(GPS_FILTERING)
-    GPS_filter_index = (GPS_filter_index + 1) % GPS_FILTER_VECTOR_LENGTH;
-    for (int axis = 0; axis < 2; axis++) {
-        GPS_read[axis] = axis == LAT ? gpsSol.llh.lat : gpsSol.llh.lon; // latest unfiltered data is in GPS_latitude and GPS_longitude
-        GPS_degree[axis] = GPS_read[axis] / 10000000;   // get the degree to assure the sum fits to the int32_t
-
-        // How close we are to a degree line ? its the first three digits from the fractions of degree
-        // later we use it to Check if we are close to a degree line, if yes, disable averaging,
-        fraction3[axis] = (GPS_read[axis] - GPS_degree[axis] * 10000000) / 10000;
-
-        GPS_filter_sum[axis] -= GPS_filter[axis][GPS_filter_index];
-        GPS_filter[axis][GPS_filter_index] = GPS_read[axis] - (GPS_degree[axis] * 10000000);
-        GPS_filter_sum[axis] += GPS_filter[axis][GPS_filter_index];
-        GPS_filtered[axis] = GPS_filter_sum[axis] / GPS_FILTER_VECTOR_LENGTH + (GPS_degree[axis] * 10000000);
-        if (nav_mode == NAV_MODE_POSHOLD) {             // we use gps averaging only in poshold mode...
-            if (fraction3[axis] > 1 && fraction3[axis] < 999) {
-                if (axis == LAT) {
-                    gpsSol.llh.lat = GPS_filtered[LAT];
-                } else {
-                    gpsSol.llh.lon = GPS_filtered[LON];
-                }
-            }
-        }
-    }
-#endif
 
     //
     // Calculate time delta for navigation loop, range 0-1.0f, in seconds
@@ -1378,8 +1373,9 @@ void onGpsNewData(void)
     dTnav = MIN(dTnav, 1.0f);
 
     GPS_calculateDistanceAndDirectionToHome();
-    // calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
-    GPS_calc_velocity();
+    if (ARMING_FLAG(ARMED)) {
+        GPS_calculateDistanceFlownVerticalSpeed(false);
+    }
 
 #ifdef USE_GPS_RESCUE
     rescueNewGpsData();
